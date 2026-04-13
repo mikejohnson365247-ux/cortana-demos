@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aria — AI Receptionist for Law Firms</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Inter', sans-serif; }
+  .stage { width: 390px; height: 693px; background: #080810; position: relative; overflow: hidden; border-radius: 16px; box-shadow: 0 0 60px rgba(201,168,76,0.12); }
+  canvas#particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+  .glow { position: absolute; border-radius: 50%; filter: blur(90px); z-index: 2; pointer-events: none; }
+  .glow-1 { width: 320px; height: 320px; background: rgba(201,168,76,0.07); top: -100px; left: -100px; }
+  .glow-2 { width: 260px; height: 260px; background: rgba(201,168,76,0.05); bottom: -80px; right: -80px; }
+  .scene { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; opacity: 0; padding: 40px 30px; pointer-events: none; }
+  .scene.active { opacity: 1; }
+  .scene.fade-in { animation: fadeIn 0.6s ease forwards; }
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideRight { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* SCENE 1 */
+  #s1 .eyebrow { font-size: 11px; font-weight: 600; color: #C9A84C; text-transform: uppercase; letter-spacing: 2px; opacity: 0; animation: fadeIn 0.5s ease 0.1s forwards; margin-bottom: 14px; }
+  #s1 .headline { font-size: 34px; font-weight: 900; color: #fff; text-align: center; line-height: 1.15; opacity: 0; transform: translateY(20px); animation: slideUp 0.7s ease 0.3s forwards; }
+  #s1 .accent { color: #C9A84C; }
+  #s1 .sub { font-size: 17px; font-weight: 400; color: rgba(255,255,255,0.45); margin-top: 16px; text-align: center; opacity: 0; animation: fadeIn 0.6s ease 1.4s forwards; }
+
+  /* SCENE 2 */
+  #s2 .phone-wrap { position: relative; opacity: 0; animation: slideUp 0.6s ease 0.3s forwards; }
+  #s2 .phone-body { width: 140px; height: 240px; background: #12121e; border-radius: 24px; border: 2px solid #1e1e30; display: flex; align-items: center; justify-content: center; }
+  #s2 .phone-screen { width: 120px; height: 200px; background: #0d0d18; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+  #s2 .call-label { font-size: 9px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 1px; }
+  #s2 .caller { font-size: 12px; font-weight: 600; color: #fff; text-align: center; line-height: 1.4; }
+  #s2 .ring-icon { font-size: 28px; animation: ring 0.5s ease infinite alternate; }
+  @keyframes ring { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+  #s2 .pulse-ring { position: absolute; width: 160px; height: 280px; border: 2px solid rgba(201,168,76,0.25); border-radius: 28px; top: -22px; left: -12px; animation: pulseRing 1.5s ease infinite; }
+  @keyframes pulseRing { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.12); opacity: 0; } }
+  #s2 .clock { position: absolute; top: 20px; right: 20px; font-size: 13px; color: rgba(255,255,255,0.3); font-weight: 500; opacity: 0; animation: fadeIn 0.5s ease 0.8s forwards; }
+  #s2 .stat-text { font-size: 14px; color: rgba(255,255,255,0.65); text-align: center; line-height: 1.6; margin-top: 28px; opacity: 0; animation: fadeIn 0.6s ease 2.5s forwards; }
+  #s2 .stat-text span { color: #C9A84C; font-weight: 700; }
+
+  /* SCENE 3 */
+  #s3 .interface { width: 100%; background: #0e0e1a; border-radius: 16px; border: 1px solid #1a1a28; overflow: hidden; opacity: 0; animation: slideUp 0.6s ease 0.2s forwards; }
+  #s3 .interface-header { background: #12121e; padding: 12px 16px; border-bottom: 1px solid #1a1a28; display: flex; align-items: center; gap: 10px; }
+  #s3 .status-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; box-shadow: 0 0 8px #4ade80; animation: blink 2s ease infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  #s3 .interface-title { font-size: 13px; font-weight: 600; color: #fff; }
+  #s3 .interface-sub { font-size: 10px; color: rgba(255,255,255,0.3); margin-left: auto; }
+  #s3 .chat-area { padding: 16px; min-height: 200px; display: flex; flex-direction: column; gap: 10px; }
+  .chat-msg { display: flex; gap: 8px; align-items: flex-start; opacity: 0; }
+  .chat-msg.visible { animation: fadeIn 0.4s ease forwards; }
+  .chat-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding-top: 3px; min-width: 42px; }
+  .chat-label.caller { color: rgba(255,255,255,0.35); }
+  .chat-label.aria { color: #C9A84C; }
+  .chat-bubble { background: #151520; border-radius: 10px; padding: 8px 12px; font-size: 12px; color: rgba(255,255,255,0.8); line-height: 1.5; border: 1px solid #202030; flex: 1; }
+  .chat-bubble.aria-bubble { border-color: rgba(201,168,76,0.3); background: rgba(201,168,76,0.06); }
+  #s3 .lead-confirm { margin-top: 12px; background: #101a10; border: 1px solid #1e3a1e; border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; width: 100%; opacity: 0; animation: slideUp 0.5s ease forwards; }
+  #s3 .lead-text { font-size: 11px; color: #4ade80; font-weight: 500; }
+
+  /* SCENE 4 */
+  #s4 .scene-title { font-size: 20px; font-weight: 800; color: #fff; text-align: center; margin-bottom: 24px; opacity: 0; animation: fadeIn 0.5s ease 0.2s forwards; line-height: 1.3; }
+  #s4 .panels { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+  .panel { background: #0e0e1a; border: 1px solid #1a1a28; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; opacity: 0; transform: translateX(-20px); }
+  .panel.visible { animation: slideRight 0.5s ease forwards; }
+  .panel-icon { font-size: 22px; width: 44px; height: 44px; background: rgba(201,168,76,0.08); border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(201,168,76,0.18); flex-shrink: 0; }
+  .panel-text { font-size: 13px; font-weight: 600; color: #fff; }
+  .panel-sub { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+
+  /* SCENE 5 */
+  #s5 .scene-title { font-size: 20px; font-weight: 800; color: #fff; text-align: center; margin-bottom: 8px; opacity: 0; animation: fadeIn 0.5s ease 0.2s forwards; }
+  #s5 .scene-sub { font-size: 13px; color: rgba(255,255,255,0.35); text-align: center; margin-bottom: 28px; opacity: 0; animation: fadeIn 0.5s ease 0.5s forwards; }
+  #s5 .stats { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+  .stat-card { background: #0e0e1a; border: 1px solid #1a1a28; border-radius: 16px; padding: 20px 24px; opacity: 0; transform: translateY(20px); }
+  .stat-card.visible { animation: slideUp 0.6s ease forwards; }
+  .stat-number { font-size: 40px; font-weight: 900; color: #C9A84C; line-height: 1; }
+  .stat-desc { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 6px; font-weight: 500; }
+  #st1 .stat-number { color: #4ade80; }
+
+  /* SCENE 6 */
+  #s6 .logo-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: 0; animation: fadeIn 0.8s ease 0.3s forwards; }
+  #s6 .logo-diamond { font-size: 48px; animation: float 3s ease infinite; }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  #s6 .logo-name { font-size: 26px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+  #s6 .logo-tag { font-size: 12px; color: rgba(255,255,255,0.35); text-align: center; margin-top: 4px; }
+  #s6 .divider { width: 40px; height: 2px; background: #C9A84C; border-radius: 2px; margin: 20px auto; opacity: 0; animation: fadeIn 0.5s ease 0.8s forwards; }
+  #s6 .cta-btn { background: linear-gradient(135deg, #C9A84C, #a8843a); color: #000; font-size: 15px; font-weight: 800; padding: 16px 36px; border-radius: 50px; border: none; opacity: 0; animation: fadeIn 0.6s ease 1s forwards, pulse 2s ease 1.5s infinite; cursor: pointer; letter-spacing: 0.3px; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); } 50% { box-shadow: 0 0 0 12px rgba(201,168,76,0); } }
+  #s6 .cta-sub { font-size: 12px; color: rgba(255,255,255,0.25); margin-top: 12px; opacity: 0; animation: fadeIn 0.5s ease 1.4s forwards; }
+
+  .progress-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, #C9A84C, #a8843a); z-index: 20; width: 0; transition: width 0.1s linear; }
+  .dots { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 20; }
+  .dot { width: 4px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 50%; transition: all 0.3s ease; }
+  .dot.active { background: #C9A84C; height: 16px; border-radius: 2px; }
+  .restart-btn { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 8px 20px; border-radius: 20px; font-size: 12px; cursor: pointer; font-family: 'Inter', sans-serif; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <canvas id="particles"></canvas>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+  <div class="dots">
+    <div class="dot active" id="dot-0"></div>
+    <div class="dot" id="dot-1"></div>
+    <div class="dot" id="dot-2"></div>
+    <div class="dot" id="dot-3"></div>
+    <div class="dot" id="dot-4"></div>
+    <div class="dot" id="dot-5"></div>
+  </div>
+  <div class="progress-bar" id="progress"></div>
+
+  <!-- SCENE 1 -->
+  <div class="scene active" id="s1">
+    <p class="eyebrow">For Law Firms</p>
+    <p class="headline">Your firm is losing<br>clients while you're<br><span class="accent">in trial.</span></p>
+    <p class="sub">Here's what that costs you.</p>
+  </div>
+
+  <!-- SCENE 2 -->
+  <div class="scene" id="s2">
+    <div class="clock">11:22 PM</div>
+    <div class="phone-wrap">
+      <div class="pulse-ring"></div>
+      <div class="phone-body">
+        <div class="phone-screen" id="phoneScreen">
+          <span class="call-label">Incoming Call</span>
+          <span class="caller">Accident<br>Victim</span>
+          <span class="ring-icon">📞</span>
+          <span class="call-label" style="font-size:8px;color:#C9A84C">Ringing…</span>
+        </div>
+      </div>
+    </div>
+    <p class="stat-text"><span>62%</span> of legal clients call<br>just once — then move on.<br>That's a case you'll never see.</p>
+  </div>
+
+  <!-- SCENE 3 -->
+  <div class="scene" id="s3">
+    <div class="interface">
+      <div class="interface-header">
+        <div class="status-dot"></div>
+        <span class="interface-title">Aria — Legal AI Receptionist</span>
+        <span class="interface-sub">24/7 Active</span>
+      </div>
+      <div class="chat-area" id="chatArea"></div>
+    </div>
+    <div class="lead-confirm" id="leadConfirm" style="display:none">
+      <span style="font-size:20px">✅</span>
+      <span class="lead-text">Lead captured + consultation booked</span>
+    </div>
+  </div>
+
+  <!-- SCENE 4 -->
+  <div class="scene" id="s4">
+    <p class="scene-title">What Aria handles<br><span style="color:#C9A84C">so you don't have to</span></p>
+    <div class="panels">
+      <div class="panel" id="p1"><div class="panel-icon">📞</div><div><div class="panel-text">Answers every call, 24/7</div><div class="panel-sub">While you're in trial, depositions, or sleep</div></div></div>
+      <div class="panel" id="p2"><div class="panel-icon">📋</div><div><div class="panel-text">Captures full lead info</div><div class="panel-sub">Name, injury, incident date, contact</div></div></div>
+      <div class="panel" id="p3"><div class="panel-icon">📅</div><div><div class="panel-text">Books consultations</div><div class="panel-sub">Directly into your calendar</div></div></div>
+      <div class="panel" id="p4"><div class="panel-icon">⚡</div><div><div class="panel-text">Alerts you instantly</div><div class="panel-sub">High-value case summary texted to you</div></div></div>
+    </div>
+  </div>
+
+  <!-- SCENE 5 -->
+  <div class="scene" id="s5">
+    <p class="scene-title">The numbers.</p>
+    <p class="scene-sub">For firms using Aria</p>
+    <div class="stats">
+      <div class="stat-card" id="st1"><div class="stat-number" id="missedCount">38</div><div class="stat-desc">Missed leads captured per month</div></div>
+      <div class="stat-card" id="st2"><div class="stat-number">70%</div><div class="stat-desc">Cheaper than an after-hours answering service</div></div>
+      <div class="stat-card" id="st3"><div class="stat-number">$0</div><div class="stat-desc">Cases lost to voicemail after setup</div></div>
+    </div>
+  </div>
+
+  <!-- SCENE 6 -->
+  <div class="scene" id="s6">
+    <div class="logo-wrap">
+      <span class="logo-diamond">🔷</span>
+      <span class="logo-name">Cortana Solutions</span>
+      <span class="logo-tag">AI Voice Agents for Law Firms</span>
+    </div>
+    <div class="divider"></div>
+    <button class="cta-btn">Book a Free Demo</button>
+    <p class="cta-sub">Link in bio → cortanasolutions.com</p>
+  </div>
+</div>
+
+<button class="restart-btn" onclick="startAnimation()">▶ Restart</button>
+
+<script>
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+const stage = document.getElementById('stage');
+canvas.width = stage.offsetWidth;
+canvas.height = stage.offsetHeight;
+const particles = Array.from({length:35}, () => ({
+  x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+  r: Math.random()*1.5+0.3, dx: (Math.random()-0.5)*0.25, dy: (Math.random()-0.5)*0.25,
+  alpha: Math.random()*0.3+0.08
+}));
+function drawParticles() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p => {
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(201,168,76,${p.alpha})`; ctx.fill();
+    p.x+=p.dx; p.y+=p.dy;
+    if(p.x<0||p.x>canvas.width) p.dx*=-1;
+    if(p.y<0||p.y>canvas.height) p.dy*=-1;
+  });
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+const TOTAL_MS = 60000;
+const scenes = ['s1','s2','s3','s4','s5','s6'];
+const sceneTimes = [0,3000,8000,20000,35000,50000];
+let timers = [], startTime = null;
+function clearTimers() { timers.forEach(clearTimeout); timers=[]; }
+
+function setScene(idx) {
+  scenes.forEach((id,i) => {
+    document.getElementById(id).classList.remove('active','fade-in');
+    document.getElementById('dot-'+i).classList.remove('active');
+  });
+  document.getElementById(scenes[idx]).classList.add('active','fade-in');
+  document.getElementById('dot-'+idx).classList.add('active');
+  if(idx===1) runScene2();
+  if(idx===2) runScene3();
+  if(idx===3) runScene4();
+  if(idx===4) runScene5();
+}
+
+function runScene2() {
+  timers.push(setTimeout(() => {
+    document.getElementById('phoneScreen').innerHTML = '<span class="call-label" style="color:rgba(255,255,255,0.25)">Missed Call</span><span style="font-size:28px">📵</span><span class="call-label" style="font-size:9px;color:rgba(255,255,255,0.2)">They called a competitor</span>';
+  }, 2200));
+}
+
+function runScene3() {
+  const area = document.getElementById('chatArea');
+  area.innerHTML='';
+  document.getElementById('leadConfirm').style.display='none';
+  const msgs = [
+    {role:'caller', text:'Hi, I was in a car accident tonight. I need a lawyer.'},
+    {role:'aria',   text:'I\'m so sorry to hear that. I can help. Can I get your name and a brief description of what happened?'},
+    {role:'caller', text:'John Reyes. The other driver ran a red light and hit me.'},
+    {role:'aria',   text:'Got it, John. I\'ve noted the details. Would you like to schedule a free consultation with our attorney tomorrow morning?'},
+  ];
+  [600,2000,4200,6000].forEach(function(d,i) {
+    timers.push(setTimeout(function() {
+      const row = document.createElement('div');
+      row.className='chat-msg visible';
+      row.innerHTML='<span class="chat-label '+msgs[i].role+'">'+(msgs[i].role==='aria'?'Aria':'Caller')+'</span><div class="chat-bubble '+(msgs[i].role==='aria'?'aria-bubble':'')+'">'+msgs[i].text+'</div>';
+      area.appendChild(row);
+      area.scrollTop=area.scrollHeight;
+    }, d));
+  });
+  timers.push(setTimeout(function() { document.getElementById('leadConfirm').style.display='flex'; }, 8000));
+}
+
+function runScene4() {
+  ['p1','p2','p3','p4'].forEach(function(id,i) {
+    const el=document.getElementById(id);
+    el.classList.remove('visible'); el.style.opacity=0;
+    timers.push(setTimeout(function() { el.classList.add('visible'); }, 400+i*1800));
+  });
+}
+
+function runScene5() {
+  ['st1','st2','st3'].forEach(function(id,i) {
+    const el=document.getElementById(id);
+    el.classList.remove('visible'); el.style.opacity=0;
+    timers.push(setTimeout(function() { el.classList.add('visible'); }, 400+i*2000));
+  });
+  timers.push(setTimeout(function() {
+    const num=document.getElementById('missedCount');
+    let v=0;
+    const t=setInterval(function() { v+=2; if(v>=38){v=38;clearInterval(t);} num.textContent=v; }, 60);
+  }, 400));
+}
+
+function updateProgress() {
+  if(!startTime) return;
+  const pct=Math.min(((Date.now()-startTime)/TOTAL_MS)*100,100);
+  document.getElementById('progress').style.width=pct+'%';
+  if(Date.now()-startTime<TOTAL_MS) requestAnimationFrame(updateProgress);
+}
+
+function startAnimation() {
+  clearTimers(); startTime=Date.now();
+  scenes.forEach(function(id) { document.getElementById(id).classList.remove('active','fade-in'); });
+  document.getElementById('phoneScreen').innerHTML='<span class="call-label">Incoming Call</span><span class="caller">Accident<br>Victim</span><span class="ring-icon">📞</span><span class="call-label" style="font-size:8px;color:#C9A84C">Ringing…</span>';
+  sceneTimes.forEach(function(t,i) { timers.push(setTimeout(function(){setScene(i);},t)); });
+  updateProgress();
+}
+startAnimation();
+</script>
+</body>
+</html>
