@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortana Solutions — AI Ops Agent Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0f;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+  
+  /* Header */
+  header { text-align: center; margin-bottom: 60px; }
+  .logo { font-size: 48px; margin-bottom: 16px; animation: float 3s ease infinite; }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  h1 { font-size: 42px; font-weight: 900; margin-bottom: 12px; background: linear-gradient(135deg, #C9956C, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .tagline { font-size: 18px; color: rgba(255,255,255,0.5); max-width: 600px; margin: 0 auto; }
+  
+  /* Demo Grid */
+  .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 60px; }
+  @media (max-width: 900px) { .demo-grid { grid-template-columns: 1fr; } }
+  
+  .demo-card {
+    background: #11111a;
+    border: 1px solid #222233;
+    border-radius: 20px;
+    padding: 30px;
+    position: relative;
+    overflow: hidden;
+  }
+  .demo-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #C9956C, transparent);
+  }
+  .card-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #C9956C;
+    margin-bottom: 20px;
+  }
+  
+  /* Chat Demo */
+  .chat-container {
+    background: #0d0d14;
+    border-radius: 16px;
+    border: 1px solid #1a1a28;
+    height: 400px;
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #1a1a28;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .status-dot {
+    width: 10px; height: 10px;
+    background: #4ade80;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #4ade80;
+    animation: blink 2s ease infinite;
+  }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .chat-title { font-size: 14px; font-weight: 600; }
+  .chat-subtitle { font-size: 11px; color: rgba(255,255,255,0.35); margin-left: auto; }
+  
+  .chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .message {
+    display: flex;
+    gap: 12px;
+    max-width: 85%;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .message.user { align-self: flex-end; flex-direction: row-reverse; }
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .avatar.aria { background: rgba(201,149,108,0.15); border: 1px solid rgba(201,149,108,0.3); }
+  .avatar.user { background: rgba(74,222,128,0.15); border: 1px solid rgba(74,222,128,0.3); }
+  .bubble {
+    background: #1a1a28;
+    border-radius: 16px;
+    padding: 12px 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    border: 1px solid #2a2a3d;
+  }
+  .message.aria .bubble {
+    background: rgba(201,149,108,0.08);
+    border-color: rgba(201,149,108,0.25);
+  }
+  .message.user .bubble {
+    background: rgba(74,222,128,0.08);
+    border-color: rgba(74,222,128,0.25);
+  }
+  
+  .chat-input-area {
+    padding: 16px 20px;
+    border-top: 1px solid #1a1a28;
+    display: flex;
+    gap: 12px;
+  }
+  .chat-input {
+    flex: 1;
+    background: #0d0d14;
+    border: 1px solid #2a2a3d;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #fff;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .chat-input:focus { border-color: #C9956C; }
+  .chat-input::placeholder { color: rgba(255,255,255,0.3); }
+  .send-btn {
+    background: linear-gradient(135deg, #C9956C, #a8714a);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .send-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(201,149,108,0.3); }
+  
+  /* Dashboard Demo */
+  .dashboard {
+    background: #0d0d14;
+    border-radius: 16px;
+    border: 1px solid #1a1a28;
+    padding: 20px;
+    height: 400px;
+    overflow-y: auto;
+  }
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #1a1a28;
+  }
+  .dashboard-title { font-size: 16px; font-weight: 700; }
+  .live-badge {
+    background: rgba(74,222,128,0.15);
+    color: #4ade80;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(74,222,128,0.3);
+    animation: pulse 2s ease infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  
+  .alert-item {
+    background: #11111a;
+    border: 1px solid #222233;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    animation: slideIn 0.3s ease;
+  }
+  .alert-icon {
+    font-size: 24px;
+    width: 44px; height: 44px;
+    background: rgba(201,149,108,0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(201,149,108,0.2);
+    flex-shrink: 0;
+  }
+  .alert-content { flex: 1; }
+  .alert-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .alert-desc { font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.5; }
+  .alert-action {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+  }
+  .action-btn {
+    background: rgba(201,149,108,0.15);
+    border: 1px solid rgba(201,149,108,0.3);
+    color: #C9956C;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .action-btn:hover { background: rgba(201,149,108,0.25); }
+  .action-btn.primary {
+    background: linear-gradient(135deg, #C9956C, #a8714a);
+    color: #fff;
+    border: none;
+  }
+  
+  /* Features Section */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 60px;
+  }
+  @media (max-width: 900px) { .features { grid-template-columns: 1fr; } }
+  .feature {
+    background: #11111a;
+    border: 1px solid #222233;
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+  }
+  .feature-icon { font-size: 36px; margin-bottom: 16px; }
+  .feature-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .feature-desc { font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.6; }
+  
+  /* Pricing */
+  .pricing {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 60px;
+  }
+  @media (max-width: 700px) { .pricing { grid-template-columns: 1fr; } }
+  .pricing-card {
+    background: #11111a;
+    border: 1px solid #222233;
+    border-radius: 20px;
+    padding: 32px;
+    text-align: center;
+    position: relative;
+  }
+  .pricing-card.featured {
+    border-color: #C9956C;
+    box-shadow: 0 0 40px rgba(201,149,108,0.1);
+  }
+  .pricing-card.featured::before {
+    content: 'Most Popular';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #C9956C, #a8714a);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 16px;
+    border-radius: 20px;
+  }
+  .pricing-name { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .pricing-price { font-size: 42px; font-weight: 900; margin-bottom: 8px; }
+  .pricing-price span { font-size: 16px; font-weight: 400; color: rgba(255,255,255,0.4); }
+  .pricing-setup { font-size: 13px; color: rgba(255,255,255,0.35); margin-bottom: 24px; }
+  .pricing-features { list-style: none; text-align: left; margin-bottom: 24px; }
+  .pricing-features li {
+    padding: 8px 0;
+    border-bottom: 1px solid #1a1a28;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pricing-features li:last-child { border: none; }
+  .check { color: #4ade80; }
+  .pricing-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid #C9956C;
+    color: #C9956C;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .pricing-btn:hover { background: rgba(201,149,108,0.1); }
+  .pricing-card.featured .pricing-btn {
+    background: linear-gradient(135deg, #C9956C, #a8714a);
+    color: #fff;
+    border: none;
+  }
+  
+  /* CTA */
+  .cta-section {
+    text-align: center;
+    padding: 60px 40px;
+    background: linear-gradient(135deg, #11111a, #0a0a0f);
+    border-radius: 24px;
+    border: 1px solid #222233;
+  }
+  .cta-title { font-size: 32px; font-weight: 900; margin-bottom: 12px; }
+  .cta-sub { font-size: 16px; color: rgba(255,255,255,0.45); margin-bottom: 32px; }
+  .cta-btn {
+    background: linear-gradient(135deg, #C9956C, #a8714a);
+    border: none;
+    border-radius: 50px;
+    padding: 16px 48px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(201,149,108,0.3); }
+  
+  /* Typing indicator */
+  .typing {
+    display: flex;
+    gap: 4px;
+    padding: 12px 16px;
+  }
+  .typing span {
+    width: 8px; height: 8px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    animation: typing 1.4s ease infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing { 0%, 100% { transform: translateY(0); opacity: 0.4; } 50% { transform: translateY(-6px); opacity: 1; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">🔷</div>
+    <h1>Cortana Solutions</h1>
+    <p class="tagline">One AI agent watching your booking, ads, SMS, and inventory. Spots issues, takes action — like an ops manager who never sleeps.</p>
+  </header>
+  
+  <div class="demo-grid">
+    <!-- Chat Demo -->
+    <div class="demo-card">
+      <div class="card-label">Try Aria — AI Receptionist</div>
+      <div class="chat-container">
+        <div class="chat-header">
+          <div class="status-dot"></div>
+          <span class="chat-title">Aria</span>
+          <span class="chat-subtitle">Online 24/7</span>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="message aria">
+            <div class="avatar aria">🔷</div>
+            <div class="bubble">Hi! I'm Aria, the AI receptionist for this med spa. Ask me about appointments, pricing, or services!</div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendMessage()">
+          <button class="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Dashboard Demo -->
+    <div class="demo-card">
+      <div class="card-label">Live Ops Dashboard</div>
+      <div class="dashboard">
+        <div class="dashboard-header">
+          <span class="dashboard-title">Active Alerts</span>
+          <span class="live-badge">● Live</span>
+        </div>
+        <div id="alertsContainer">
+          <!-- Alerts injected by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">📞</div>
+      <div class="feature-title">Never Miss a Call</div>
+      <div class="feature-desc">Aria answers every call, 24/7, and books appointments directly into your calendar.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Real-Time Insights</div>
+      <div class="feature-desc">Get instant alerts on no-shows, ad spend issues, inventory low-stock, and more.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Auto-Actions</div>
+      <div class="feature-desc">Aria takes action automatically — sending confirmations, pausing ads, drafting POs.</div>
+    </div>
+  </div>
+  
+  <div class="pricing">
+    <div class="pricing-card">
+      <div class="pricing-name">Monitoring</div>
+      <div class="pricing-price">$3,000<span>/mo</span></div>
+      <div class="pricing-setup">$5,000 setup fee</div>
+      <ul class="pricing-features">
+        <li><span class="check">✓</span> 24/7 AI receptionist</li>
+        <li><span class="check">✓</span> Real-time alerts & insights</li>
+        <li><span class="check">✓</span> Low-risk auto-actions</li>
+        <li><span class="check">✓</span> Booking system integration</li>
+        <li><span class="check">✓</span> SMS/Email confirmations</li>
+      </ul>
+      <button class="pricing-btn">Book a Demo</button>
+    </div>
+    <div class="pricing-card featured">
+      <div class="pricing-name">Full Automation</div>
+      <div class="pricing-price">$5,000<span>/mo</span></div>
+      <div class="pricing-setup">$8,000 setup fee</div>
+      <ul class="pricing-features">
+        <li><span class="check">✓</span> Everything in Monitoring</li>
+        <li><span class="check">✓</span> Full automation suite</li>
+        <li><span class="check">✓</span> Custom integrations</li>
+        <li><span class="check">✓</span> Priority support</li>
+        <li><span class="check">✓</span> Dedicated success manager</li>
+      </ul>
+      <button class="pricing-btn">Book a Demo</button>
+    </div>
+  </div>
+  
+  <div class="cta-section">
+    <h2 class="cta-title">Ready to see it in action?</h2>
+    <p class="cta-sub">Book a live demo with your own data. See how Aria would handle your calls, alerts, and automations.</p>
+    <button class="cta-btn" onclick="window.location.href='mailto:ameen@cortanasolutions.com'">Book Your Free Demo</button>
+  </div>
+</div>
+
+<script>
+// Chat responses
+const responses = {
+  'appointment': "I can help with that! We have openings Thursday at 2 PM and Friday at 10 AM. Which works better for you?",
+  'botox': "Our Botox starts at $12/unit. Most patients use 20-40 units depending on the area. Would you like to book a free consult?",
+  'filler': "We offer Juvederm and Restylane fillers starting at $550/syringe. I can schedule you with one of our expert injectors!",
+  'price': "Great question! Here are our most popular services:\n• Botox: $12/unit\n• Fillers: $550+/syringe\n• Facials: $150-300\n• Microneedling: $350\nWant to book a consultation?",
+  'hours': "We're open Monday-Friday 9 AM - 7 PM, and Saturday 10 AM - 4 PM. When would you like to come in?",
+  'location': "We're located at 123 Main Street in Hinsdale, with free parking in the rear. Easy to find!",
+  'default': "Thanks for reaching out! I can help with appointments, pricing, services, or general questions. What would you like to know?"
+};
+
+function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const messages = document.getElementById('chatMessages');
+  const text = input.value.trim();
+  
+  if (!text) return;
+  
+  // User message
+  messages.innerHTML += `
+    <div class="message user">
+      <div class="avatar user">👤</div>
+      <div class="bubble">${escapeHtml(text)}</div>
+    </div>
+  `;
+  
+  input.value = '';
+  messages.scrollTop = messages.scrollHeight;
+  
+  // Typing indicator
+  const typingId = 'typing-' + Date.now();
+  messages.innerHTML += `
+    <div class="message aria" id="${typingId}">
+      <div class="avatar aria">🔷</div>
+      <div class="typing"><span></span><span></span><span></span></div>
+    </div>
+  `;
+  messages.scrollTop = messages.scrollHeight;
+  
+  // Response after delay
+  setTimeout(() => {
+    document.getElementById(typingId).remove();
+    const lowerText = text.toLowerCase();
+    let response = responses.default;
+    
+    for (const [key, val] of Object.entries(responses)) {
+      if (key !== 'default' && lowerText.includes(key)) {
+        response = val;
+        break;
+      }
+    }
+    
+    messages.innerHTML += `
+      <div class="message aria">
+        <div class="avatar aria">🔷</div>
+        <div class="bubble">${response.replace(/\n/g, '<br>')}</div>
+      </div>
+    `;
+    messages.scrollTop = messages.scrollHeight;
+  }, 1000 + Math.random() * 1000);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Dashboard alerts
+const alerts = [
+  { icon: '📞', title: 'Missed Call - 11:47 PM', desc: 'New patient called after hours. Voicemail transcribed: "Interested in Botox consultation."', action: 'Draft SMS follow-up', actionPrimary: true },
+  { icon: '📉', title: 'No-Show Alert', desc: '2 cancellations today (15% above avg). Waitlist has 3 patients available.', action: 'Send waitlist offers', actionPrimary: true },
+  { icon: '💉', title: 'Low Stock: Botox', desc: 'Only 2 vials remaining. Avg usage: 8 vials/month. Reorder recommended.', action: 'Draft PO (Allergan)', actionPrimary: false },
+  { icon: '📢', title: 'Ad Spend Alert', desc: 'Instagram CPC up 40% this week. Budget pacing at 85% with 5 days left.', action: 'Pause underperforming ads', actionPrimary: true },
+  { icon: '⭐', title: 'New Review', desc: '5-star Google review from Sarah M.: "Best Botox experience ever!"', action: 'Draft thank-you response', actionPrimary: false },
+];
+
+let alertIndex = 0;
+function renderAlerts() {
+  const container = document.getElementById('alertsContainer');
+  if (alertIndex < alerts.length) {
+    const alert = alerts[alertIndex];
+    container.innerHTML += `
+      <div class="alert-item">
+        <div class="alert-icon">${alert.icon}</div>
+        <div class="alert-content">
+          <div class="alert-title">${alert.title}</div>
+          <div class="alert-desc">${alert.desc}</div>
+          <div class="alert-action">
+            <button class="action-btn${alert.actionPrimary ? ' primary' : ''}">${alert.action}</button>
+          </div>
+        </div>
+      </div>
+    `;
+    alertIndex++;
+    setTimeout(renderAlerts, 800 + Math.random() * 800);
+  }
+}
+
+// Start rendering alerts
+renderAlerts();
+</script>
+</body>
+</html>
